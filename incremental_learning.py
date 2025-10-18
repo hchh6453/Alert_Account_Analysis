@@ -209,11 +209,11 @@ class IncrementalDetector:
         print("1. 評估 Random Forest...")
         rf = RandomForestClassifier(
             n_estimators=100,
-            max_depth=10,
-            min_samples_split=5,
-            min_samples_leaf=2,
+            max_depth=5,
+            min_samples_split=10,
+            min_samples_leaf=5,
             random_state=42,
-            class_weight='balanced'
+            class_weight='balanced'  # 重新啟用類別權重
         )
         cv_f1_scores = cross_val_score(rf, X_train_scaled, y_train, cv=5, scoring='f1')
         cv_scores['random_forest'] = cv_f1_scores.mean()
@@ -225,7 +225,7 @@ class IncrementalDetector:
         # 2. Isolation Forest
         print("2. 評估 Isolation Forest...")
         iso_forest = IsolationForest(
-            contamination=0.3,
+            contamination=0.1,  # 10% 異常比例（平衡學習）
             random_state=42,
             n_estimators=100
         )
@@ -241,7 +241,7 @@ class IncrementalDetector:
         # 3. One-Class SVM
         print("3. 評估 One-Class SVM...")
         oc_svm = OneClassSVM(
-            nu=0.3,
+            nu=0.1,  # 10% 異常比例（平衡學習）
             kernel='rbf',
             gamma='scale'
         )
@@ -258,7 +258,7 @@ class IncrementalDetector:
         print("4. 評估 Local Outlier Factor...")
         lof = LocalOutlierFactor(
             n_neighbors=20,
-            contamination=0.3,
+            contamination=0.1,  # 10% 異常比例（平衡學習）
             novelty=True
         )
         lof.fit(X_train_scaled)
@@ -444,8 +444,8 @@ def run_incremental_learning():
     # 3. 創建訓練資料
     X_train, y_train, feature_cols = detector.create_training_data(
         transactions_df, alerts_df, predict_df,
-        alert_ratio=0.1,  # 10% 警示帳戶（接近真實比例 0.1%）
-        sample_size=5000,  # 5000 個訓練樣本
+        alert_ratio=0.01,  # 1% 警示帳戶（平衡學習和真實性）
+        sample_size=5000,  # 5000 個訓練樣本（減少計算時間）
         strategy='representative'  # 追求全面性：確保涵蓋不同交易模式
         # 其他策略選項（已註解保留）:
         # strategy='balanced'   # 平衡採樣：簡單隨機選擇
